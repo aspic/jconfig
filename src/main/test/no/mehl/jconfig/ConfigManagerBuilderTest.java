@@ -1,40 +1,37 @@
 package no.mehl.jconfig;
 
+import no.mehl.jconfig.pojo.Category;
 import no.mehl.jconfig.pojo.Config;
-import no.mehl.jconfig.pojo.Environment;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.FileAttribute;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
-public class ConfiguratorBuilderTest {
+public class ConfigManagerBuilderTest {
 
     @Test
     public void withJsonConfig_shouldParseJson() {
-        new Configurator.ConfiguratorBuilder().withJsonConfig("{}").build();
+        new ConfigManager.ConfiguratorBuilder().withJsonConfig("{}").build();
     }
 
     @Test
     public void withFileConfig_shouldParseJson() {
-        Configurator configurator = new Configurator.ConfiguratorBuilder().withFileConfig("testconfig.json").build();
-        assertEquals("bar", configurator.getStringProperty("local", "foo"));
+        ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withFileConfig("testconfig.json").build();
+        assertEquals("bar", configManager.getStringProperty("local", "foo"));
     }
 
     @Test
     public void withConfig_shouldHaveConfig() {
         Config config = new Config();
-        Environment env = new Environment();
+        Category env = new Category();
         env.put("foo", "baz");
         config.put("local", env);
-        new Configurator.ConfiguratorBuilder().withConfig(config).build();
+        new ConfigManager.ConfiguratorBuilder().withConfig(config).build();
     }
 
     @Test
@@ -45,19 +42,19 @@ public class ConfiguratorBuilderTest {
         f.toFile().deleteOnExit();
         final AtomicBoolean failed = new AtomicBoolean(true);
 
-        final Configurator configurator = new Configurator.ConfiguratorBuilder().withConfigWatcher("/tmp", f.getFileName().toString(), 1, TimeUnit.SECONDS).build();
+        final ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withConfigWatcher("/tmp", f.getFileName().toString(), 1, TimeUnit.SECONDS).build();
         ConfigChangeListener listener = new ConfigChangeListener() {
             @Override
             public void configChanged(Config newConfig) {
-                configurator.getPool().shutdown();
+                configManager.getPool().shutdown();
                 failed.set(false);
             }
         };
-        configurator.addConfigChangedListener(listener);
+        configManager.addConfigChangedListener(listener);
         Files.write(f, "{ \"local\": {\"foo\": \"farr\"}}".getBytes());
 
         try {
-            configurator.getPool().awaitTermination(2, TimeUnit.SECONDS);
+            configManager.getPool().awaitTermination(2, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

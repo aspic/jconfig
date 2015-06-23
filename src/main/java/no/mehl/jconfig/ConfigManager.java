@@ -1,13 +1,15 @@
 package no.mehl.jconfig;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import no.mehl.jconfig.pojo.Config;
+import no.mehl.jconfig.updater.FileUpdater;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -15,38 +17,53 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class Configurator implements ConfigChangeListener {
+public class ConfigManager implements ConfigChangeListener {
 
-    private static final String DEFAULT_ENVIRONMENT = "local";
+    private static final String DEFAULT_CATEGORY = "local";
 
     private Config config;
     private List<ConfigChangeListener> configListeners;
     private ScheduledExecutorService pool;
 
-    private Configurator() {
+    private static final Type ARRAY_STRING = new TypeToken<List<String[]>>() {}.getType();
+
+    private ConfigManager() {
         configListeners = new ArrayList<ConfigChangeListener>();
         pool = new ScheduledThreadPoolExecutor(1);
     }
 
     public String getStringProperty(String key) {
-        return parseTypedProperty(getDefaultEnvironmentValue(key), String.class);
+        return getStringProperty(DEFAULT_CATEGORY, key);
     }
 
-    public String getStringProperty(String environment, String key) {
-        return parseTypedProperty(getEnvironmentValue(environment, key), String.class);
+    public String getStringProperty(String category, String key) {
+        return parseTypedProperty(getCategoryValue(category, key), String.class);
     }
 
-    private Object getDefaultEnvironmentValue(String key) {
-        return getEnvironmentValue(DEFAULT_ENVIRONMENT, key);
+    public List<String> getStringListProperty(String key) {
+        return getStringListProperty(DEFAULT_CATEGORY, key);
     }
 
-    private Object getEnvironmentValue(String environment, String key) {
+    public List<String> getStringListProperty(String category, String key) {
+        List l = parseTypedProperty(getCategoryValue(category, key), List.class);
+        List<String> strings = new ArrayList<String>();
+        for (Object item : l) {
+            if (item instanceof String) {
+                strings.add((String) item);
+            } else {
+                throw new ConfiguratorException(String.format("List in \"%s\" for key \"%s\" does contain contain a non String item=%s", category, key, item));
+            }
+        }
+        return strings;
+    }
+
+    private Object getCategoryValue(String category, String key) {
         if (config == null) {
             throw new ConfiguratorException("No config loaded, unable to get value");
         }
-        Map<String, Object> env = config.get(environment);
+        Map<String, Object> env = config.get(category);
         if (env == null) {
-            throw new ConfiguratorException(String.format("Environment %s does not exist", environment));
+            throw new ConfiguratorException(String.format("Category %s does not exist", category));
         }
         return env.get(key);
     }
@@ -76,10 +93,10 @@ public class Configurator implements ConfigChangeListener {
 
     public static class ConfiguratorBuilder {
 
-        private Configurator configurator = new Configurator();
+        private ConfigManager configManager = new ConfigManager();
 
         public ConfiguratorBuilder withConfig(Config config) {
-            configurator.config = config;
+            configManager.config = config;
             return this;
         }
 
@@ -102,14 +119,14 @@ public class Configurator implements ConfigChangeListener {
         }
 
         public ConfiguratorBuilder withConfigWatcher(String directory, String file, long interval, TimeUnit unit) {
-            configurator.pool.scheduleAtFixedRate(new ConfigWatcher(directory, file, configurator), interval, interval, unit);
+            configManager.pool.scheduleAtFixedRate(new FileUpdater(directory, file, configManager), interval, interval, unit);
             return this;
         }
 
 
 
-        public Configurator build() {
-            return configurator;
+        public ConfigManager build() {
+            return configManager;
         }
 
     }

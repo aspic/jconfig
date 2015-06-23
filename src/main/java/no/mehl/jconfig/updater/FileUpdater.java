@@ -1,4 +1,7 @@
-package no.mehl.jconfig;
+package no.mehl.jconfig.updater;
+
+import no.mehl.jconfig.ConfigChangeListener;
+import no.mehl.jconfig.ConfiguratorException;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -8,13 +11,13 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
-public class ConfigWatcher implements Runnable {
+public class FileUpdater implements Runnable {
 
     private WatchKey watchKey;
     private String fileName;
     private ConfigChangeListener listener;
 
-    public ConfigWatcher(String directory, String fileName, ConfigChangeListener listener) {
+    public FileUpdater(String directory, String fileName, ConfigChangeListener listener) {
         Path path = Paths.get(directory);
         this.listener = listener;
         this.fileName = fileName;

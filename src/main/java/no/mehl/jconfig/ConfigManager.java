@@ -1,14 +1,11 @@
 package no.mehl.jconfig;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import no.mehl.jconfig.pojo.Config;
-import no.mehl.jconfig.updater.FileUpdater;
+import no.mehl.jconfig.updater.FileWatcher;
+import no.mehl.jconfig.updater.RemoteFileWatcher;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
-import java.net.URISyntaxException;
-import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +48,7 @@ public class ConfigManager implements ConfigChangeListener {
             if (item instanceof String) {
                 strings.add((String) item);
             } else {
-                throw new ConfiguratorException(String.format("List in \"%s\" for key \"%s\" does contain contain a non String item=%s", category, key, item));
+                throw new ConfigException(String.format("List in \"%s\" for key \"%s\" does contain contain a non String item=%s", category, key, item));
             }
         }
         return strings;
@@ -59,23 +56,23 @@ public class ConfigManager implements ConfigChangeListener {
 
     private Object getCategoryValue(String category, String key) {
         if (config == null) {
-            throw new ConfiguratorException("No config loaded, unable to get value");
+            throw new ConfigException("No config loaded, unable to get value");
         }
         Map<String, Object> env = config.get(category);
         if (env == null) {
-            throw new ConfiguratorException(String.format("Category %s does not exist", category));
+            throw new ConfigException(String.format("Category %s does not exist", category));
         }
         return env.get(key);
     }
 
     private <T> T parseTypedProperty(Object value, Class<T> clazz) {
         if (value == null) {
-            throw new ConfiguratorException("Value was null");
+            throw new ConfigException("Value was null");
         }
         try {
             return clazz.cast(value);
         } catch (ClassCastException e) {
-            throw new ConfiguratorException(String.format("Unable to cast value=%s of type %s", value, value.getClass()));
+            throw new ConfigException(String.format("Unable to cast value=%s of type %s", value, value.getClass()));
         }
     }
 
@@ -94,36 +91,32 @@ public class ConfigManager implements ConfigChangeListener {
     public static class ConfiguratorBuilder {
 
         private ConfigManager configManager = new ConfigManager();
+        private ConfigParser parser = new ConfigParser();
 
         public ConfiguratorBuilder withConfig(Config config) {
             configManager.config = config;
             return this;
         }
 
-        public ConfiguratorBuilder withJsonConfig(String json) {
-            return withConfig(new Gson().fromJson(json, Config.class));
-        }
-
-        public ConfiguratorBuilder withFileConfig(String path) {
-            try {
-                String config = new String(Files.readAllBytes(
-                        Paths.get(getClass().getClassLoader()
-                                .getResource(path)
-                                .toURI())));
-                return withJsonConfig(config);
-            } catch (IOException e) {
-                throw new ConfiguratorException(String.format("Unable to read config for path=%s", path), e);
-            } catch (URISyntaxException e) {
-                throw new ConfiguratorException(String.format("Invalid URI for path=%s", path), e);
-            }
-        }
-
-        public ConfiguratorBuilder withConfigWatcher(String directory, String file, long interval, TimeUnit unit) {
-            configManager.pool.scheduleAtFixedRate(new FileUpdater(directory, file, configManager), interval, interval, unit);
+        public ConfiguratorBuilder withJson(String json) {
+            configManager.config = parser.parseJson(json);
             return this;
         }
 
+        public ConfiguratorBuilder withResources(String resourcePath) {
+            configManager.config = parser.parseFilePath(resourcePath);
+            return this;
+        }
 
+        public ConfiguratorBuilder withFileWatcher(String directory, String file, long interval, TimeUnit unit) {
+            configManager.pool.scheduleAtFixedRate(new FileWatcher(directory, file, configManager), interval, interval, unit);
+            return this;
+        }
+
+        public ConfiguratorBuilder withRemoteFileWatcher(String url, long interval, TimeUnit unit) {
+            configManager.pool.scheduleAtFixedRate(new RemoteFileWatcher(url, configManager), interval, interval, unit);
+            return this;
+        }
 
         public ConfigManager build() {
             return configManager;

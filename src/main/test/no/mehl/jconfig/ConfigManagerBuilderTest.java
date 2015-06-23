@@ -16,12 +16,12 @@ public class ConfigManagerBuilderTest {
 
     @Test
     public void withJsonConfig_shouldParseJson() {
-        new ConfigManager.ConfiguratorBuilder().withJsonConfig("{}").build();
+        new ConfigManager.ConfiguratorBuilder().withJson("{}").build();
     }
 
     @Test
     public void withFileConfig_shouldParseJson() {
-        ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withFileConfig("testconfig.json").build();
+        ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withResources("testconfig.json").build();
         assertEquals("bar", configManager.getStringProperty("local", "foo"));
     }
 
@@ -42,7 +42,7 @@ public class ConfigManagerBuilderTest {
         f.toFile().deleteOnExit();
         final AtomicBoolean failed = new AtomicBoolean(true);
 
-        final ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withConfigWatcher("/tmp", f.getFileName().toString(), 1, TimeUnit.SECONDS).build();
+        final ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withFileWatcher("/tmp", f.getFileName().toString(), 1, TimeUnit.SECONDS).build();
         ConfigChangeListener listener = new ConfigChangeListener() {
             @Override
             public void configChanged(Config newConfig) {

@@ -8,12 +8,12 @@ import static org.junit.Assert.*;
 
 public class ConfigManagerTest {
 
-    @Test(expected = ConfiguratorException.class)
+    @Test(expected = ConfigException.class)
     public void getValue_givenNoConfig_shouldThrowException() {
         buildStandard().getStringProperty("foo");
     }
 
-    @Test(expected = ConfiguratorException.class)
+    @Test(expected = ConfigException.class)
     public void getValue_givenNoValue_shouldThrowException() {
         buildStandard().getStringProperty("foo");
     }
@@ -31,7 +31,7 @@ public class ConfigManagerTest {
         assertEquals(2, values.size());
     }
 
-    @Test(expected = ConfiguratorException.class)
+    @Test(expected = ConfigException.class)
     public void getListValue_givenNonStringList_shouldThrowException() {
         ConfigManager configManager = buildJson("{\"local\": {\"foo\": [1, \"two\"]}}");
         List<String> values = configManager.getStringListProperty("foo");
@@ -42,7 +42,7 @@ public class ConfigManagerTest {
     }
 
     private ConfigManager buildJson(String json) {
-        return new ConfigManager.ConfiguratorBuilder().withJsonConfig(json).build();
+        return new ConfigManager.ConfiguratorBuilder().withJson(json).build();
     }
 
 

@@ -18,7 +18,7 @@ import java.nio.file.Path;
 public class RemoteFileWatcher implements Runnable {
 
     private URL url;
-    private long cachedFileSize;
+    private long cachedFileBytes;
     private ConfigParser parser;
     private ConfigChangeListener listener;
 
@@ -34,30 +34,32 @@ public class RemoteFileWatcher implements Runnable {
 
     @Override
     public void run() {
-        int i;
-        int sum = 0;
+        BufferedReader in;
+        String readLine;
         try {
-            URLConnection con = url.openConnection();
             Path tempPath = Files.createTempFile("remote-config", ".json");
             File tempFile = tempPath.toFile();
-            BufferedInputStream bis = new BufferedInputStream(con.getInputStream());
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(tempFile.getName()));
-            while ((i = bis.read()) != -1) {
-                bos.write(i);
-                sum += i;
-            }
-            bos.flush();
-            bis.close();
+            in = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter( new FileOutputStream(tempFile) , "UTF-8"));
 
-            if (sum != cachedFileSize) {
+            while ((readLine = in.readLine()) != null) {
+                out.write(readLine);
+            }
+            out.flush();
+            out.close();
+
+            long fileLength = tempFile.length();
+            if (cachedFileBytes != fileLength) {
                 listener.configChanged(parser.parseFile(tempPath));
-                cachedFileSize = sum;
+                cachedFileBytes = fileLength;
             }
 
-        } catch (MalformedInputException malformedInputException) {
-            malformedInputException.printStackTrace();
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
+
+
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

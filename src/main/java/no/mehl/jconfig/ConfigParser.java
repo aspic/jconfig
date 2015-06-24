@@ -30,6 +30,8 @@ public class ConfigParser {
     public Config parseFile(Path path) {
         try {
             String config = new String(Files.readAllBytes(path));
+
+            System.out.println("got config " + config);
             return parseJson(config);
         } catch (IOException e) {
             throw new ConfigException(String.format("Unable to read config for path=%s", path), e);

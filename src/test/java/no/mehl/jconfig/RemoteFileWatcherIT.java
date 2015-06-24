@@ -1,17 +1,17 @@
 package no.mehl.jconfig;
 
-import no.mehl.jconfig.listener.ConfigChangeListener;
-import no.mehl.jconfig.pojo.Config;
-import no.mehl.jconfig.watcher.RemoteFileWatcher;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -20,63 +20,124 @@ import static org.junit.Assert.assertTrue;
 
 public class RemoteFileWatcherIT {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteFileWatcherIT.class);
+
     @Test
     public void run_withServerResponse_shouldRetrieveConfig() throws Exception {
-        Server server = createJettyServer();
+        int port = randomPort();
+        Server server = createJettyServer(port, SingleResponseServlet.class);
 
+        ConfigManager manager = new ConfigManager.ConfiguratorBuilder().withRemoteFileWatcher("http://localhost:" + port, 1, TimeUnit.SECONDS).build();
         final AtomicInteger updates = new AtomicInteger();
-        ConfigChangeListener listener = new ConfigChangeListener() {
-            @Override
-            public void configChanged(Config newConfig) {
-                assertEquals("baz", newConfig.get("foo").get("bar"));
-                updates.incrementAndGet();
-            }
-        };
-        RemoteFileWatcher watcher = new RemoteFileWatcher("http://localhost:12345/", listener);
-        watcher.run();
+
+        manager.addConfigChangedListener(configManager -> {
+            assertEquals("baz", configManager.getStringProperty("foo", "bar"));
+            updates.incrementAndGet();
+        });
+
+        waitForManager(manager);
 
         assertEquals(1, updates.get());
 
-        server.stop();
+        stopServer(server);
     }
 
     @Test
     public void multipleRun_withSameServerResponse_shouldOnlyChangeConfigOnce() throws Exception {
-        Server server = createJettyServer();
+        int port = randomPort();
+        Server server = createJettyServer(port, SingleResponseServlet.class);
 
+        ConfigManager manager = new ConfigManager.ConfiguratorBuilder().withRemoteFileWatcher("http://localhost:" + port, 2, TimeUnit.SECONDS).build();
         final AtomicInteger updates = new AtomicInteger();
-        ConfigChangeListener listener = newConfig -> {
-            assertEquals("baz", newConfig.get("foo").get("bar"));
-            updates.incrementAndGet();
-        };
-        RemoteFileWatcher watcher = new RemoteFileWatcher("http://localhost:12345/", listener);
-        watcher.run();
-        watcher.run();
 
+        manager.addConfigChangedListener(configManager -> {
+            assertEquals("baz", configManager.getStringProperty("foo", "bar"));
+            updates.incrementAndGet();
+        });
+
+        waitForManager(manager);
         assertEquals(1, updates.get());
 
-        server.stop();
+        stopServer(server);
     }
 
+    @Test
+    public void multipleRun_withIncrementingServerResponse_shouldChangeConfig() throws Exception {
+        int port = randomPort();
+        Server server = createJettyServer(port, IncrementingResponseServlet.class);
 
+        ConfigManager manager = new ConfigManager.ConfiguratorBuilder().withRemoteFileWatcher("http://localhost:" + port, 500, TimeUnit.MILLISECONDS).build();
+        final AtomicInteger updates = new AtomicInteger();
 
-    private Server createJettyServer() throws Exception {
-        Server server = new Server(12345);
+        manager.addConfigChangedListener(configManager -> {
+            int runs = configManager.getIntProperty("foo", "incs");
+            updates.incrementAndGet();
+            if (runs == 1) {
+                manager.getPool().shutdown();
+            }
+        });
+
+        waitForManager(manager);
+        assertEquals(2, updates.get());
+        stopServer(server);
+    }
+
+    private void stopServer(Server server) {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    server.stop();
+                } catch (Exception ex) {
+                    System.out.println("Failed to stop Jetty");
+                }
+            }
+        }.start();
+    }
+
+    private void waitForManager(ConfigManager manager) {
+        try {
+            manager.getPool().awaitTermination(2, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error("", e);
+        }
+    }
+
+    private int randomPort() {
+        return (int) (1024 + (Math.random() * 10000));
+    }
+
+    private Server createJettyServer(int port, Class<? extends HttpServlet> servlet) throws Exception {
+        Server server = new Server(port);
         ServletHandler handler = new ServletHandler();
         server.setHandler(handler);
-        handler.addServletWithMapping(HelloServlet.class, "/*");
+        handler.addServletWithMapping(servlet, "/*");
         server.start();
 
         return server;
     }
 
     @SuppressWarnings("serial")
-    public static class HelloServlet extends HttpServlet {
+    public static class SingleResponseServlet extends HttpServlet {
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
             response.setContentType("application/json");
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().println("{\"foo\": {\"bar\": \"baz\"}}");
+        }
+    }
+
+    public static class IncrementingResponseServlet extends HttpServlet {
+
+        int gets = 0;
+
+        @Override
+        protected void doGet(HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+            LOGGER.info("enters servlet");
+            response.setContentType("application/json");
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.getWriter().println("{\"foo\": {\"incs\": " + gets + "}}");
+            gets += 1;
         }
     }
 

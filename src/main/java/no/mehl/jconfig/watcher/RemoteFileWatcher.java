@@ -6,11 +6,14 @@ import no.mehl.jconfig.ConfigParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Synchronizes config with a web service
@@ -20,7 +23,7 @@ public class RemoteFileWatcher implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RemoteFileWatcher.class);
 
     private URL url;
-    private long cachedFileBytes;
+    private String cachedHash = "";
     private ConfigParser parser;
     private ConfigChangeListener listener;
 
@@ -42,7 +45,7 @@ public class RemoteFileWatcher implements Runnable {
             Path tempPath = Files.createTempFile("remote-config", ".json");
             File tempFile = tempPath.toFile();
             in = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
-            BufferedWriter out = new BufferedWriter(new OutputStreamWriter( new FileOutputStream(tempFile) , "UTF-8"));
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tempFile), "UTF-8"));
 
             while ((readLine = in.readLine()) != null) {
                 out.write(readLine);
@@ -50,15 +53,27 @@ public class RemoteFileWatcher implements Runnable {
             out.flush();
             out.close();
 
-            long fileLength = tempFile.length();
-            if (cachedFileBytes != fileLength) {
-                listener.configChanged(parser.parseFile(tempPath));
-                cachedFileBytes = fileLength;
+            String jsonContent = new String(Files.readAllBytes(tempPath));
+            String md5Hash = getMD5Hash(jsonContent);
+            System.out.println(md5Hash);
+            if (!cachedHash.equals(md5Hash)) {
+                System.out.println(jsonContent);
+                listener.configChanged(parser.parseJson(jsonContent));
+                cachedHash = md5Hash;
             }
-        } catch (UnsupportedEncodingException e) {
-            logger.error("Unable to read remote config file, config will be unchanged.", e);
         } catch (IOException e) {
             logger.error("Unable to read remote config file, config will be unchanged.", e);
+        } catch (Exception e) {
+            logger.error("Error when reading content", e);
         }
+    }
+
+    private String getMD5Hash(String content) {
+        try {
+            return (new HexBinaryAdapter()).marshal(MessageDigest.getInstance("MD5").digest(content.getBytes()));
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("Unable to create hash of string", e);
+        }
+        return null;
     }
 }

@@ -15,7 +15,6 @@ import java.nio.file.Paths;
 public class ConfigParser {
 
     public Config parseJson(String json) {
-        System.out.println(json);
         return new Gson().fromJson(json, Config.class);
     }
 
@@ -29,10 +28,7 @@ public class ConfigParser {
 
     public Config parseFile(Path path) {
         try {
-            String config = new String(Files.readAllBytes(path));
-
-            System.out.println("got config " + config);
-            return parseJson(config);
+            return parseJson(new String(Files.readAllBytes(path)));
         } catch (IOException e) {
             throw new ConfigException(String.format("Unable to read config for path=%s", path), e);
         }

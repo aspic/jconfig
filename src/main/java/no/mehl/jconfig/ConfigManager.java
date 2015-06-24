@@ -7,24 +7,26 @@ import no.mehl.jconfig.pojo.Config;
 import no.mehl.jconfig.watcher.FileWatcher;
 import no.mehl.jconfig.watcher.RemoteFileWatcher;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class encapsulates a {@link no.mehl.jconfig.pojo.Config} and provides means for getting
+ * values and listening for config changes.
+ */
 public class ConfigManager implements ConfigChangeListener {
 
     private static final String DEFAULT_CATEGORY = "local";
 
-    private Config config;
+    private Optional<Config> config = Optional.empty();
     private List<ConfigManagerListener> configListeners;
     private ScheduledExecutorService pool;
-
-    private static final Type ARRAY_STRING = new TypeToken<List<String[]>>() {}.getType();
 
     private ConfigManager() {
         configListeners = new ArrayList<>();
@@ -37,6 +39,14 @@ public class ConfigManager implements ConfigChangeListener {
 
     public String getStringProperty(String category, String key) {
         return parseTypedProperty(getCategoryValue(category, key), String.class);
+    }
+
+    public String getIntProperty(String key) {
+        return getStringProperty(DEFAULT_CATEGORY, key);
+    }
+
+    public int getIntProperty(String category, String key) {
+        return parseTypedProperty(getCategoryValue(category, key), Double.class).intValue();
     }
 
     public List<String> getStringListProperty(String key) {
@@ -57,11 +67,13 @@ public class ConfigManager implements ConfigChangeListener {
     }
 
     private Object getCategoryValue(String category, String key) {
-        if (config == null) {
+        if (!config.isPresent()) {
             throw new ConfigException("No config loaded, unable to get value");
         }
-        Map<String, Object> env = config.get(category);
+        Map<String, Object> env = config.get().get(category);
         if (env == null) {
+            System.out.println("here...");
+
             throw new ConfigException(String.format("Category %s does not exist", category));
         }
         return env.get(key);
@@ -84,7 +96,7 @@ public class ConfigManager implements ConfigChangeListener {
 
     @Override
     public void configChanged(Config newConfig) {
-        this.config = newConfig;
+        this.config = Optional.ofNullable(newConfig);
         for (ConfigManagerListener ccl : configListeners) {
             ccl.configChanged(this);
         }
@@ -96,17 +108,17 @@ public class ConfigManager implements ConfigChangeListener {
         private ConfigParser parser = new ConfigParser();
 
         public ConfiguratorBuilder withConfig(Config config) {
-            configManager.config = config;
+            configManager.config = Optional.ofNullable(config);
             return this;
         }
 
         public ConfiguratorBuilder withJson(String json) {
-            configManager.config = parser.parseJson(json);
+            configManager.config = Optional.ofNullable(parser.parseJson(json));
             return this;
         }
 
         public ConfiguratorBuilder withResources(String resourcePath) {
-            configManager.config = parser.parseFilePath(resourcePath);
+            configManager.config = Optional.ofNullable(parser.parseFilePath(resourcePath));
             return this;
         }
 
@@ -123,7 +135,6 @@ public class ConfigManager implements ConfigChangeListener {
         public ConfigManager build() {
             return configManager;
         }
-
     }
 
     public ExecutorService getPool() {

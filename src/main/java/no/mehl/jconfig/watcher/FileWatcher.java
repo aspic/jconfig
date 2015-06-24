@@ -38,10 +38,12 @@ public class FileWatcher implements Runnable {
     @Override
     public void run() {
         List<WatchEvent<?>> events = watchKey.pollEvents();
-        for(WatchEvent event : events) {
-            if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY && event.context().toString().equals(configPath.getFileName().toString())) {
-                listener.configChanged(parser.parseFile(configPath));
-            }
-        }
+        events.stream()
+                .filter(this::fileWasChanged)
+                .forEach(e -> listener.configChanged(parser.parseFile(configPath)));
+    }
+
+    private boolean fileWasChanged(WatchEvent event) {
+        return event.kind() == StandardWatchEventKinds.ENTRY_MODIFY && event.context().toString().equals(configPath.getFileName().toString());
     }
 }

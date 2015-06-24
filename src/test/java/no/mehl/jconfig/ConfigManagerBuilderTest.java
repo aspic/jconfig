@@ -1,8 +1,11 @@
 package no.mehl.jconfig;
 
+import no.mehl.jconfig.listener.ConfigManagerListener;
 import no.mehl.jconfig.pojo.Category;
 import no.mehl.jconfig.pojo.Config;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,7 +17,8 @@ import static org.junit.Assert.*;
 
 public class ConfigManagerBuilderTest {
 
-    @Test
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigManagerBuilderTest.class);
+
     public void withJsonConfig_shouldParseJson() {
         new ConfigManager.ConfiguratorBuilder().withJson("{}").build();
     }
@@ -43,12 +47,9 @@ public class ConfigManagerBuilderTest {
         final AtomicBoolean failed = new AtomicBoolean(true);
 
         final ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withFileWatcher("/tmp", f.getFileName().toString(), 1, TimeUnit.SECONDS).build();
-        ConfigChangeListener listener = new ConfigChangeListener() {
-            @Override
-            public void configChanged(Config newConfig) {
-                configManager.getPool().shutdown();
-                failed.set(false);
-            }
+        ConfigManagerListener listener = newConfig -> {
+            configManager.getPool().shutdown();
+            failed.set(false);
         };
         configManager.addConfigChangedListener(listener);
         Files.write(f, "{ \"local\": {\"foo\": \"farr\"}}".getBytes());
@@ -56,7 +57,7 @@ public class ConfigManagerBuilderTest {
         try {
             configManager.getPool().awaitTermination(2, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOGGER.error("", e);
         }
 
         assertFalse(failed.get());

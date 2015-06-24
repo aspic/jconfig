@@ -1,6 +1,6 @@
-package no.mehl.jconfig.updater;
+package no.mehl.jconfig.watcher;
 
-import no.mehl.jconfig.ConfigChangeListener;
+import no.mehl.jconfig.listener.ConfigChangeListener;
 import no.mehl.jconfig.ConfigException;
 import no.mehl.jconfig.ConfigParser;
 

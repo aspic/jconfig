@@ -1,6 +1,6 @@
-package no.mehl.jconfig.updater;
+package no.mehl.jconfig.watcher;
 
-import no.mehl.jconfig.ConfigChangeListener;
+import no.mehl.jconfig.listener.ConfigChangeListener;
 import no.mehl.jconfig.ConfigException;
 import no.mehl.jconfig.ConfigParser;
 import org.slf4j.Logger;
@@ -9,8 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.MalformedInputException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 

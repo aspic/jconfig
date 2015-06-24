@@ -1,7 +1,8 @@
 package no.mehl.jconfig;
 
+import no.mehl.jconfig.listener.ConfigChangeListener;
 import no.mehl.jconfig.pojo.Config;
-import no.mehl.jconfig.updater.RemoteFileWatcher;
+import no.mehl.jconfig.watcher.RemoteFileWatcher;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.junit.Test;
@@ -11,7 +12,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -45,12 +45,9 @@ public class RemoteFileWatcherIT {
         Server server = createJettyServer();
 
         final AtomicInteger updates = new AtomicInteger();
-        ConfigChangeListener listener = new ConfigChangeListener() {
-            @Override
-            public void configChanged(Config newConfig) {
-                assertEquals("baz", newConfig.get("foo").get("bar"));
-                updates.incrementAndGet();
-            }
+        ConfigChangeListener listener = newConfig -> {
+            assertEquals("baz", newConfig.get("foo").get("bar"));
+            updates.incrementAndGet();
         };
         RemoteFileWatcher watcher = new RemoteFileWatcher("http://localhost:12345/", listener);
         watcher.run();

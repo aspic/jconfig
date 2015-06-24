@@ -1,9 +1,11 @@
 package no.mehl.jconfig;
 
 import com.google.gson.reflect.TypeToken;
+import no.mehl.jconfig.listener.ConfigChangeListener;
+import no.mehl.jconfig.listener.ConfigManagerListener;
 import no.mehl.jconfig.pojo.Config;
-import no.mehl.jconfig.updater.FileWatcher;
-import no.mehl.jconfig.updater.RemoteFileWatcher;
+import no.mehl.jconfig.watcher.FileWatcher;
+import no.mehl.jconfig.watcher.RemoteFileWatcher;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -19,13 +21,13 @@ public class ConfigManager implements ConfigChangeListener {
     private static final String DEFAULT_CATEGORY = "local";
 
     private Config config;
-    private List<ConfigChangeListener> configListeners;
+    private List<ConfigManagerListener> configListeners;
     private ScheduledExecutorService pool;
 
     private static final Type ARRAY_STRING = new TypeToken<List<String[]>>() {}.getType();
 
     private ConfigManager() {
-        configListeners = new ArrayList<ConfigChangeListener>();
+        configListeners = new ArrayList<>();
         pool = new ScheduledThreadPoolExecutor(1);
     }
 
@@ -76,15 +78,15 @@ public class ConfigManager implements ConfigChangeListener {
         }
     }
 
-    public void addConfigChangedListener(ConfigChangeListener listener) {
+    public void addConfigChangedListener(ConfigManagerListener listener) {
         configListeners.add(listener);
     }
 
     @Override
     public void configChanged(Config newConfig) {
         this.config = newConfig;
-        for (ConfigChangeListener ccl : configListeners) {
-            ccl.configChanged(newConfig);
+        for (ConfigManagerListener ccl : configListeners) {
+            ccl.configChanged(this);
         }
     }
 
@@ -109,12 +111,12 @@ public class ConfigManager implements ConfigChangeListener {
         }
 
         public ConfiguratorBuilder withFileWatcher(String directory, String file, long interval, TimeUnit unit) {
-            configManager.pool.scheduleAtFixedRate(new FileWatcher(directory, file, configManager), interval, interval, unit);
+            configManager.pool.scheduleAtFixedRate(new FileWatcher(directory, file, configManager), 0, interval, unit);
             return this;
         }
 
         public ConfiguratorBuilder withRemoteFileWatcher(String url, long interval, TimeUnit unit) {
-            configManager.pool.scheduleAtFixedRate(new RemoteFileWatcher(url, configManager), interval, interval, unit);
+            configManager.pool.scheduleAtFixedRate(new RemoteFileWatcher(url, configManager), 0, interval, unit);
             return this;
         }
 

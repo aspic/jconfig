@@ -1,4 +1,4 @@
-package no.mehl.jconfig;
+package no.mehl.jconfig.listener;
 
 import no.mehl.jconfig.pojo.Config;
 

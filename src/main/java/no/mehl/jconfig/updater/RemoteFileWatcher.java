@@ -3,6 +3,8 @@ package no.mehl.jconfig.updater;
 import no.mehl.jconfig.ConfigChangeListener;
 import no.mehl.jconfig.ConfigException;
 import no.mehl.jconfig.ConfigParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -16,6 +18,8 @@ import java.nio.file.Path;
  * Synchronizes config with a web service
  */
 public class RemoteFileWatcher implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(RemoteFileWatcher.class);
 
     private URL url;
     private long cachedFileBytes;
@@ -53,13 +57,10 @@ public class RemoteFileWatcher implements Runnable {
                 listener.configChanged(parser.parseFile(tempPath));
                 cachedFileBytes = fileLength;
             }
-
-
-
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            logger.error("Unable to read remote config file, config will be unchanged.", e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Unable to read remote config file, config will be unchanged.", e);
         }
     }
 }

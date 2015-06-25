@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 public class RemoteFileWatcherIT {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteFileWatcherIT.class);
+    private static final Logger logger = LoggerFactory.getLogger(RemoteFileWatcherIT.class);
 
     @Test
     public void run_withServerResponse_shouldRetrieveConfig() throws Exception {
@@ -88,8 +88,8 @@ public class RemoteFileWatcherIT {
             public void run() {
                 try {
                     server.stop();
-                } catch (Exception ex) {
-                    System.out.println("Failed to stop Jetty");
+                } catch (Exception e) {
+                    logger.info("Failed to stop Jetty", e);
                 }
             }
         }.start();
@@ -99,7 +99,7 @@ public class RemoteFileWatcherIT {
         try {
             manager.getPool().awaitTermination(2, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOGGER.error("", e);
+            logger.error("", e);
         }
     }
 
@@ -133,7 +133,7 @@ public class RemoteFileWatcherIT {
 
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-            LOGGER.info("enters servlet");
+            logger.info("enters servlet");
             response.setContentType("application/json");
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().println("{\"foo\": {\"incs\": " + gets + "}}");

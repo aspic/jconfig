@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
 
 public class ConfigManagerBuilderTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigManagerBuilderTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConfigManagerBuilderTest.class);
 
     public void withJsonConfig_shouldParseJson() {
         new ConfigManager.ConfiguratorBuilder().withJson("{}").build();
@@ -57,7 +57,7 @@ public class ConfigManagerBuilderTest {
         try {
             configManager.getPool().awaitTermination(2, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOGGER.error("", e);
+            logger.error("", e);
         }
 
         assertFalse(failed.get());

@@ -72,8 +72,6 @@ public class ConfigManager implements ConfigChangeListener {
         }
         Map<String, Object> env = config.get().get(category);
         if (env == null) {
-            System.out.println("here...");
-
             throw new ConfigException(String.format("Category %s does not exist", category));
         }
         return env.get(key);

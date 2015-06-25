@@ -55,9 +55,8 @@ public class RemoteFileWatcher implements Runnable {
 
             String jsonContent = new String(Files.readAllBytes(tempPath));
             String md5Hash = getMD5Hash(jsonContent);
-            System.out.println(md5Hash);
+            logger.debug("Created md5hash={} for content={}", md5Hash, jsonContent);
             if (!cachedHash.equals(md5Hash)) {
-                System.out.println(jsonContent);
                 listener.configChanged(parser.parseJson(jsonContent));
                 cachedHash = md5Hash;
             }

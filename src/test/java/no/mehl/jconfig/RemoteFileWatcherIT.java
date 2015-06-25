@@ -27,7 +27,7 @@ public class RemoteFileWatcherIT {
         int port = randomPort();
         Server server = createJettyServer(port, SingleResponseServlet.class);
 
-        ConfigManager manager = new ConfigManager.ConfiguratorBuilder().withRemoteFileWatcher("http://localhost:" + port, 1, TimeUnit.SECONDS).build();
+        ConfigManager manager = new ConfigManager.ConfigManagerBuilder().withRemoteFileWatcher("http://localhost:" + port, 1, TimeUnit.SECONDS).build();
         final AtomicInteger updates = new AtomicInteger();
 
         manager.addConfigChangedListener(configManager -> {
@@ -47,7 +47,7 @@ public class RemoteFileWatcherIT {
         int port = randomPort();
         Server server = createJettyServer(port, SingleResponseServlet.class);
 
-        ConfigManager manager = new ConfigManager.ConfiguratorBuilder().withRemoteFileWatcher("http://localhost:" + port, 2, TimeUnit.SECONDS).build();
+        ConfigManager manager = new ConfigManager.ConfigManagerBuilder().withRemoteFileWatcher("http://localhost:" + port, 2, TimeUnit.SECONDS).build();
         final AtomicInteger updates = new AtomicInteger();
 
         manager.addConfigChangedListener(configManager -> {
@@ -66,7 +66,7 @@ public class RemoteFileWatcherIT {
         int port = randomPort();
         Server server = createJettyServer(port, IncrementingResponseServlet.class);
 
-        ConfigManager manager = new ConfigManager.ConfiguratorBuilder().withRemoteFileWatcher("http://localhost:" + port, 500, TimeUnit.MILLISECONDS).build();
+        ConfigManager manager = new ConfigManager.ConfigManagerBuilder().withRemoteFileWatcher("http://localhost:" + port, 500, TimeUnit.MILLISECONDS).build();
         final AtomicInteger updates = new AtomicInteger();
 
         manager.addConfigChangedListener(configManager -> {

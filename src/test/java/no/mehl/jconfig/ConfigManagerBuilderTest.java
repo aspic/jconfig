@@ -20,12 +20,12 @@ public class ConfigManagerBuilderTest {
     private static final Logger logger = LoggerFactory.getLogger(ConfigManagerBuilderTest.class);
 
     public void withJsonConfig_shouldParseJson() {
-        new ConfigManager.ConfiguratorBuilder().withJson("{}").build();
+        new ConfigManager.ConfigManagerBuilder().withJson("{}").build();
     }
 
     @Test
     public void withFileConfig_shouldParseJson() {
-        ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withResources("testconfig.json").build();
+        ConfigManager configManager = new ConfigManager.ConfigManagerBuilder().withResources("testconfig.json").build();
         assertEquals("bar", configManager.getString("local", "foo"));
     }
 
@@ -35,7 +35,7 @@ public class ConfigManagerBuilderTest {
         Category env = new Category();
         env.put("foo", "baz");
         config.put("local", env);
-        new ConfigManager.ConfiguratorBuilder().withConfig(config).build();
+        new ConfigManager.ConfigManagerBuilder().withConfig(config).build();
     }
 
     @Test
@@ -46,7 +46,7 @@ public class ConfigManagerBuilderTest {
         f.toFile().deleteOnExit();
         final AtomicBoolean failed = new AtomicBoolean(true);
 
-        final ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withFileWatcher("/tmp", f.getFileName().toString(), 1, TimeUnit.SECONDS).build();
+        final ConfigManager configManager = new ConfigManager.ConfigManagerBuilder().withFileWatcher("/tmp", f.getFileName().toString(), 1, TimeUnit.SECONDS).build();
         ConfigManagerListener listener = newConfig -> {
             configManager.getPool().shutdown();
             failed.set(false);

@@ -123,37 +123,37 @@ public class ConfigManager implements ConfigChangeListener {
         }
     }
 
-    public static class ConfiguratorBuilder {
+    public static class ConfigManagerBuilder {
 
         private ConfigManager configManager = new ConfigManager();
         private ConfigParser parser = new ConfigParser();
 
-        public ConfiguratorBuilder withConfig(Config config) {
+        public ConfigManagerBuilder withConfig(Config config) {
             configManager.config = Optional.ofNullable(config);
             return this;
         }
 
-        public ConfiguratorBuilder withJson(String json) {
+        public ConfigManagerBuilder withJson(String json) {
             configManager.config = Optional.ofNullable(parser.parseJson(json));
             return this;
         }
 
-        public ConfiguratorBuilder withResources(String resourcePath) {
+        public ConfigManagerBuilder withResources(String resourcePath) {
             configManager.config = Optional.ofNullable(parser.parseFilePath(resourcePath));
             return this;
         }
 
-        public ConfiguratorBuilder withFileWatcher(String directory, String file, long interval, TimeUnit unit) {
+        public ConfigManagerBuilder withFileWatcher(String directory, String file, long interval, TimeUnit unit) {
             configManager.pool.scheduleAtFixedRate(new FileWatcher(directory, file, configManager), 0, interval, unit);
             return this;
         }
 
-        public ConfiguratorBuilder withRemoteFileWatcher(String url, long interval, TimeUnit unit) {
+        public ConfigManagerBuilder withRemoteFileWatcher(String url, long interval, TimeUnit unit) {
             configManager.pool.scheduleAtFixedRate(new RemoteFileWatcher(url, configManager), 0, interval, unit);
             return this;
         }
 
-        public ConfiguratorBuilder withDefaultCategory(String category) {
+        public ConfigManagerBuilder withDefaultCategory(String category) {
             configManager.defaultCategory = Optional.of(category);
             return this;
         }

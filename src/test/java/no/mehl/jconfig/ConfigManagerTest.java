@@ -62,11 +62,11 @@ public class ConfigManagerTest {
     }
 
     private ConfigManager buildStandard() {
-        return new ConfigManager.ConfiguratorBuilder().build();
+        return new ConfigManager.ConfigManagerBuilder().build();
     }
 
     private ConfigManager buildJson(String json) {
-        return new ConfigManager.ConfiguratorBuilder().withJson(json).build();
+        return new ConfigManager.ConfigManagerBuilder().withJson(json).build();
     }
 
 

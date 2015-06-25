@@ -1,20 +1,17 @@
 package no.mehl.jconfig;
 
-import com.google.gson.reflect.TypeToken;
 import no.mehl.jconfig.listener.ConfigChangeListener;
 import no.mehl.jconfig.listener.ConfigManagerListener;
 import no.mehl.jconfig.pojo.Config;
 import no.mehl.jconfig.watcher.FileWatcher;
 import no.mehl.jconfig.watcher.RemoteFileWatcher;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * This class encapsulates a {@link no.mehl.jconfig.pojo.Config} and provides means for getting
@@ -22,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ConfigManager implements ConfigChangeListener {
 
-    private static final String DEFAULT_CATEGORY = "local";
+    private Optional<String> defaultCategory = Optional.of("local");
 
     private Optional<Config> config = Optional.empty();
     private List<ConfigManagerListener> configListeners;
@@ -33,37 +30,56 @@ public class ConfigManager implements ConfigChangeListener {
         pool = new ScheduledThreadPoolExecutor(1);
     }
 
-    public String getStringProperty(String key) {
-        return getStringProperty(DEFAULT_CATEGORY, key);
+    public String getString(String key) {
+        return getString(defaultCategory.get(), key);
     }
 
-    public String getStringProperty(String category, String key) {
+    public String getString(String category, String key) {
         return parseTypedProperty(getCategoryValue(category, key), String.class);
     }
 
-    public String getIntProperty(String key) {
-        return getStringProperty(DEFAULT_CATEGORY, key);
+    public String getInt(String key) {
+        return getString(defaultCategory.get(), key);
     }
 
-    public int getIntProperty(String category, String key) {
+    public int getInt(String category, String key) {
         return parseTypedProperty(getCategoryValue(category, key), Double.class).intValue();
     }
 
-    public List<String> getStringListProperty(String key) {
-        return getStringListProperty(DEFAULT_CATEGORY, key);
+    public List<String> getStringList(String key) {
+        return getStringList(defaultCategory.get(), key);
     }
 
-    public List<String> getStringListProperty(String category, String key) {
-        List l = parseTypedProperty(getCategoryValue(category, key), List.class);
-        List<String> strings = new ArrayList<String>();
-        for (Object item : l) {
-            if (item instanceof String) {
-                strings.add((String) item);
-            } else {
-                throw new ConfigException(String.format("List in \"%s\" for key \"%s\" does contain contain a non String item=%s", category, key, item));
-            }
+    public List<String> getStringList(String category, String key) {
+        try {
+            List l = parseTypedProperty(getCategoryValue(category, key), List.class);
+            return Arrays.asList(Arrays.copyOf(l.toArray(), l.size(), String[].class));
+        } catch (ArrayStoreException e) {
+            throw new ConfigException("Unable to create list of strings", e);
         }
-        return strings;
+    }
+
+    public List<Integer> getIntList(String key) {
+        return getIntList(defaultCategory.get(), key);
+    }
+
+    private List<Integer> getIntList(String category, String key) {
+        List<Double> doubles = getDoubleList(category, key);
+        return doubles.stream().filter(this::isInt).map(Double::intValue).collect(Collectors.toList());
+    }
+
+    public List<Double> getDoubleList(String key) {
+        return getDoubleList(defaultCategory.get(), key);
+    }
+
+    private List<Double> getDoubleList(String category, String key) {
+        try {
+            List l = parseTypedProperty(getCategoryValue(category, key), List.class);
+            return Arrays.asList(Arrays.copyOf(l.toArray(), l.size(), Double[].class));
+        } catch (ArrayStoreException e) {
+            e.printStackTrace();
+            throw new ConfigException("Unable to create list of integers", e);
+        }
     }
 
     private Object getCategoryValue(String category, String key) {
@@ -75,6 +91,13 @@ public class ConfigManager implements ConfigChangeListener {
             throw new ConfigException(String.format("Category %s does not exist", category));
         }
         return env.get(key);
+    }
+
+    private boolean isInt(double d) {
+        if(d == Math.floor(d) && !Double.isInfinite(d)) {
+            return true;
+        }
+        throw new ConfigException(String.format("Value=%f is not an integer", d));
     }
 
     private <T> T parseTypedProperty(Object value, Class<T> clazz) {
@@ -127,6 +150,11 @@ public class ConfigManager implements ConfigChangeListener {
 
         public ConfiguratorBuilder withRemoteFileWatcher(String url, long interval, TimeUnit unit) {
             configManager.pool.scheduleAtFixedRate(new RemoteFileWatcher(url, configManager), 0, interval, unit);
+            return this;
+        }
+
+        public ConfiguratorBuilder withDefaultCategory(String category) {
+            configManager.defaultCategory = Optional.of(category);
             return this;
         }
 

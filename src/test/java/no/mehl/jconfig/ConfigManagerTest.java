@@ -10,31 +10,55 @@ public class ConfigManagerTest {
 
     @Test(expected = ConfigException.class)
     public void getValue_givenNoConfig_shouldThrowException() {
-        buildStandard().getStringProperty("foo");
+        buildStandard().getString("foo");
     }
 
     @Test(expected = ConfigException.class)
     public void getValue_givenNoValue_shouldThrowException() {
-        buildStandard().getStringProperty("foo");
+        buildStandard().getString("foo");
     }
 
     @Test
     public void getValue_givenValueInCategory_shouldReturnValue() {
         ConfigManager configManager = buildJson("{\"dev\": {\"foo\": \"bar\"}}");
-        assertEquals("bar", configManager.getStringProperty("dev", "foo"));
+        assertEquals("bar", configManager.getString("dev", "foo"));
     }
 
     @Test
-    public void getArrayValue_givenValue_shouldReturnArray() {
+    public void getStringList_givenStringList_shouldStringList() {
         ConfigManager configManager = buildJson("{\"local\": {\"foo\": [\"one\", \"two\"]}}");
-        List<String> values = configManager.getStringListProperty("foo");
+        List<String> values = configManager.getStringList("foo");
         assertEquals(2, values.size());
     }
 
     @Test(expected = ConfigException.class)
-    public void getListValue_givenNonStringList_shouldThrowException() {
+    public void getStringList_givenMixedList_shouldThrowException() {
         ConfigManager configManager = buildJson("{\"local\": {\"foo\": [1, \"two\"]}}");
-        List<String> values = configManager.getStringListProperty("foo");
+        configManager.getStringList("foo");
+    }
+
+    @Test
+    public void getDoubleList_givenDoubleList_shouldReturnDoubleList() {
+        ConfigManager configManager = buildJson("{\"local\": {\"foo\": [1.0001, 10000]}}");
+        List<Double> values = configManager.getDoubleList("foo");
+        assertEquals(1.0001, values.get(0), 0.00000001);
+        assertEquals(10000, values.get(1), 0.00000001);
+    }
+
+    @Test
+    public void getIntList_givenIntList_shouldReturnIntList() {
+        ConfigManager configManager = buildJson("{\"local\": {\"foo\": [1, 22123]}}");
+        List<Integer> values = configManager.getIntList("foo");
+        assertEquals(1, values.get(0), 0.00000001);
+        assertEquals(22123, values.get(1), 0.00000001);
+    }
+
+    @Test(expected = ConfigException.class)
+    public void getIntList_givenMixedList_shouldThrowException() {
+        ConfigManager configManager = buildJson("{\"local\": {\"foo\": [1, 22123.01]}}");
+        List<Integer> values = configManager.getIntList("foo");
+        assertEquals(1, values.get(0), 0.00000001);
+        assertEquals(22123, values.get(1), 0.00000001);
     }
 
     private ConfigManager buildStandard() {

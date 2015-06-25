@@ -15,7 +15,11 @@ import java.nio.file.Paths;
 public class ConfigParser {
 
     public Config parseJson(String json) {
-        return new Gson().fromJson(json, Config.class);
+        try {
+            return new Gson().fromJson(json, Config.class);
+        } catch (Exception e) {
+            throw new ConfigException("Unable to parse json", e);
+        }
     }
 
     public Config parseFilePath(String path) {

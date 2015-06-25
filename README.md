@@ -28,7 +28,7 @@ In build.gradle:
     
 ## Config watchers
 
-### With file watcher
+### File watcher
 
 The file watcher detects when an external config file is changed, and reads the new config into memory:
 

@@ -1,10 +1,23 @@
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'maven'
 
-version = '1.0'
+version = '0.1'
+group = 'no.mehl.jconfig'
+sourceCompatibility = '1.8'
+
+ext {
+    repositoryUrl = "$repository"
+}
 
 repositories {
     mavenCentral()
+}
+
+uploadArchives {
+    repositories.mavenDeployer {
+        repository(url: repositoryUrl)
+    }
 }
 
 dependencies {

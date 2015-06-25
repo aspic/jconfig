@@ -32,7 +32,7 @@ In build.gradle:
 
 The file watcher detects when an external config file is changed, and reads the new config into memory:
 
-    // Watch the file "config" from the directory "/tmp"
+    // Watch the file "config" in the directory "/tmp"
     ConfigManager configManager = new ConfigManager.ConfigManagerBuilder()
                     .withFileWatcher("/tmp", "config", 2, TimeUnit.SECONDS) // polls every second
                     .build();
@@ -43,12 +43,12 @@ A remote file watcher downloads and parses a resource over HTTP:
 
     // Watches a json resource from the specified url
     ConfigManager manager = new ConfigManager.ConfigManagerBuilder()
-                    .withRemoteFileWatcher("http://localhost:80/config, 1, TimeUnit.HOUR) // hourly
+                    .withRemoteFileWatcher("http://localhost:80/config, 1, TimeUnit.HOURS) // hourly
                     .build();
 
 ## Config changes
 
-Consumers can be notified when config changes by adding a listener:
+Consumers can listen for config changes by adding a listener:
 
     ConfigManagerListener listener = newConfig -> {
         System.out.println("some config changed, reload a property!");

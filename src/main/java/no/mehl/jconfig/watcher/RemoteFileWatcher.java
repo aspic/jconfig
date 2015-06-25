@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
 
 /**
  * Synchronizes config with a web service
@@ -23,7 +24,7 @@ public class RemoteFileWatcher implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(RemoteFileWatcher.class);
 
     private URL url;
-    private String cachedHash = "";
+    private Optional<String> cachedHash = Optional.empty();
     private ConfigParser parser;
     private ConfigChangeListener listener;
 
@@ -54,12 +55,12 @@ public class RemoteFileWatcher implements Runnable {
             out.close();
 
             String jsonContent = new String(Files.readAllBytes(tempPath));
-            String md5Hash = getMD5Hash(jsonContent);
+            Optional<String> md5Hash = getMD5Hash(jsonContent);
             logger.debug("Created md5hash={} for content={}", md5Hash, jsonContent);
-            if (!cachedHash.equals(md5Hash)) {
+            if (!cachedHash.isPresent() || (md5Hash.isPresent() && !cachedHash.get().equals(md5Hash.get()))) {
                 listener.configChanged(parser.parseJson(jsonContent));
-                cachedHash = md5Hash;
             }
+            cachedHash = md5Hash;
         } catch (IOException e) {
             logger.error("Unable to read remote config file, config will be unchanged.", e);
         } catch (Exception e) {
@@ -67,12 +68,12 @@ public class RemoteFileWatcher implements Runnable {
         }
     }
 
-    private String getMD5Hash(String content) {
+    private Optional<String> getMD5Hash(String content) {
         try {
-            return (new HexBinaryAdapter()).marshal(MessageDigest.getInstance("MD5").digest(content.getBytes()));
+            return Optional.ofNullable((new HexBinaryAdapter()).marshal(MessageDigest.getInstance("MD5").digest(content.getBytes())));
         } catch (NoSuchAlgorithmException e) {
             logger.error("Unable to create hash of string", e);
         }
-        return null;
+        return Optional.empty();
     }
 }

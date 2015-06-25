@@ -31,7 +31,7 @@ public class RemoteFileWatcherIT {
         final AtomicInteger updates = new AtomicInteger();
 
         manager.addConfigChangedListener(configManager -> {
-            assertEquals("baz", configManager.getStringProperty("foo", "bar"));
+            assertEquals("baz", configManager.getString("foo", "bar"));
             updates.incrementAndGet();
         });
 
@@ -51,7 +51,7 @@ public class RemoteFileWatcherIT {
         final AtomicInteger updates = new AtomicInteger();
 
         manager.addConfigChangedListener(configManager -> {
-            assertEquals("baz", configManager.getStringProperty("foo", "bar"));
+            assertEquals("baz", configManager.getString("foo", "bar"));
             updates.incrementAndGet();
         });
 
@@ -70,7 +70,7 @@ public class RemoteFileWatcherIT {
         final AtomicInteger updates = new AtomicInteger();
 
         manager.addConfigChangedListener(configManager -> {
-            int runs = configManager.getIntProperty("foo", "incs");
+            int runs = configManager.getInt("foo", "incs");
             updates.incrementAndGet();
             if (runs == 1) {
                 manager.getPool().shutdown();

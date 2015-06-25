@@ -26,7 +26,7 @@ public class ConfigManagerBuilderTest {
     @Test
     public void withFileConfig_shouldParseJson() {
         ConfigManager configManager = new ConfigManager.ConfiguratorBuilder().withResources("testconfig.json").build();
-        assertEquals("bar", configManager.getStringProperty("local", "foo"));
+        assertEquals("bar", configManager.getString("local", "foo"));
     }
 
     @Test

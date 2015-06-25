@@ -17,42 +17,50 @@ In build.gradle:
     
 ## Standard usage
 
-    // Json properties
-    String json = "{ \"production\": { \"secretKey\": \"so secret\" } }";
-    
-    // Creates config manager
-    ConfigManager manager = new ConfigManager.ConfigManagerBuilder().withJson(json).build();
-    
-    // Returns the string for the production category
-    System.out.println(manager.getString("production", "secretKey")); // prints "so secret"
+```java
+// Json properties
+String json = "{ \"production\": { \"secretKey\": \"so secret\" } }";
+
+// Creates config manager
+ConfigManager manager = new ConfigManager.ConfigManagerBuilder().withJson(json).build();
+
+// Returns the string for the production category
+System.out.println(manager.getString("production", "secretKey")); // prints "so secret"
+```
     
 ## Config watchers
 
 ### File watcher
 
 The file watcher detects when an external config file is changed, and reads the new config into memory:
-
-    // Watch the file "config" in the directory "/tmp"
-    ConfigManager configManager = new ConfigManager.ConfigManagerBuilder()
-                    .withFileWatcher("/tmp", "config", 2, TimeUnit.SECONDS) // polls every second
-                    .build();
+    
+```java
+// Watch the file "config" in the directory "/tmp"
+ConfigManager configManager = new ConfigManager.ConfigManagerBuilder()
+                .withFileWatcher("/tmp", "config", 2, TimeUnit.SECONDS) // polls every second
+                .build();
+```
 
 ### Remote file watcher
 
 A remote file watcher downloads and parses a resource over HTTP:
 
-    // Watches a json resource from the specified url
-    ConfigManager manager = new ConfigManager.ConfigManagerBuilder()
-                    .withRemoteFileWatcher("http://localhost:80/config, 1, TimeUnit.HOURS) // hourly
-                    .build();
+```java
+// Watches a json resource from the specified url
+ConfigManager manager = new ConfigManager.ConfigManagerBuilder()
+                .withRemoteFileWatcher("http://localhost:80/config, 1, TimeUnit.HOURS) // hourly
+                .build();
+```
 
 ## Config changes
 
 Consumers can listen for config changes by adding a listener:
 
-    ConfigManagerListener listener = newConfig -> {
-        System.out.println("some config changed, reload a property!");
-    };
-    configManager.addConfigChangedListener(listener);
+```java
+ConfigManagerListener listener = newConfig -> {
+    System.out.println("some config changed, reload a property!");
+};
+configManager.addConfigChangedListener(listener);
+```
 
 

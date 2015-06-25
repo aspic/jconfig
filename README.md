@@ -48,7 +48,7 @@ A remote file watcher downloads and parses a resource over HTTP:
 ```java
 // Watches a json resource from the specified url
 ConfigManager manager = new ConfigManager.ConfigManagerBuilder()
-                .withRemoteFileWatcher("http://localhost:80/config, 1, TimeUnit.HOURS) // hourly
+                .withRemoteFileWatcher("http://localhost:80/config", 1, TimeUnit.HOURS) // hourly
                 .build();
 ```
 
